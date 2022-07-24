@@ -18,6 +18,7 @@ module.exports = {
     networks: {
         hardhat: {
             chainId: 31337,
+            blockConfirmations: 1,
         },
         localhost: {
             chainId: 31337,
@@ -26,7 +27,11 @@ module.exports = {
             chainId: 4,
             accounts: [PRIVATE_KEY],
             url: RINKEBY_RPC_URL,
+            blockConfirmations: 6,
         },
+    },
+    etherscan: {
+        apiKey: ETHERSCAN_API_KEY,
     },
     gasReporter: {
         enabled: true,
@@ -38,6 +43,9 @@ module.exports = {
     namedAccounts: {
         deployer: {
             default: 0,
+        },
+        player: {
+            default: 1,
         },
     },
     mocha: {

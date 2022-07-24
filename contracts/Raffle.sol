@@ -47,7 +47,7 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
     event WinnerPicked(address indexed winner);
 
     constructor(
-        address vrfCoordinatorV2,
+        address vrfCoordinatorV2, // es un contrato, para el deploy necesito un mock
         uint256 entranceFee,
         bytes32 gasLane,
         uint64 subscriptionId,
