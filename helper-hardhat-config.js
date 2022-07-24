@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat")
 
-const networConfig = {
+const networkConfig = {
     4: {
         name: "rinkeby",
         vrfCoordinatorV2: "0x6168499c0cFfCaCD319c818142124B7A15E857ab",
@@ -22,6 +22,6 @@ const networConfig = {
 const developmentChains = ["hardhat", "localhost"]
 
 module.exports = {
-    networConfig,
+    networkConfig,
     developmentChains,
 }

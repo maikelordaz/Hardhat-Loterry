@@ -1,5 +1,5 @@
 const { getNamedAccounts, deployments, network, run, ethers } = require("hardhat")
-const { developmentChains, networConfig } = require("../helper-hardhat-config")
+const { developmentChains, networkConfig } = require("../helper-hardhat-config")
 const { verify } = require("../utils/verify")
 
 const FUND_AMOUNT = ethers.utils.parseEther("30")
@@ -20,8 +20,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         // Fondeo la subscripcion
         await vrfCoordinatorV2Mock.fundSubscription(subscriptionId, FUND_AMOUNT)
     } else {
-        vrfCoordinatorV2Address = networConfig[chainId]["vrfCoordinatorV2"]
-        subscriptionId = networConfig[chainId]["subscriptionId"]
+        vrfCoordinatorV2Address = networkConfig[chainId]["vrfCoordinatorV2"]
+        subscriptionId = networkConfig[chainId]["subscriptionId"]
     }
     const waitBlockConfirmations = developmentChains.includes(network.name)
         ? 1
@@ -29,10 +29,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("--------------------------------------------------------------------------------------")
 
-    const entranceFee = networConfig[chainId]["entranceFee"]
-    const gasLane = networConfig[chainId]["gasLane"]
-    const callbackGasLimit = networConfig[chainId]["callbackGasLimit"]
-    const interval = networConfig[chainId]["interval"]
+    const entranceFee = networkConfig[chainId]["entranceFee"]
+    const gasLane = networkConfig[chainId]["gasLane"]
+    const callbackGasLimit = networkConfig[chainId]["callbackGasLimit"]
+    const interval = networkConfig[chainId]["interval"]
 
     const args = [
         vrfCoordinatorV2Address,

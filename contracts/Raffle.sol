@@ -157,6 +157,18 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
         return i_entranceFee;
     }
 
+    function getInterval() public view returns (uint256) {
+        return i_interval;
+    }
+
+    function getGasLane() public view returns (bytes32) {
+        return i_gasLane;
+    }
+
+    function getCallBackGasLimit() public view returns (uint32) {
+        return i_callBackGasLimit;
+    }
+
     function getPlayer(uint256 index) public view returns (address) {
         return s_players[index];
     }
