@@ -5,11 +5,17 @@ const { assert, expect } = require("chai")
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Raffle unit tests", async function () {
-          let raffle, vrfCoordinatorV2Mock, entranceFee, gasLane, callBackGasLimit, interval
+          let raffle,
+              vrfCoordinatorV2Mock,
+              deployer,
+              entranceFee,
+              gasLane,
+              callBackGasLimit,
+              interval
           const chainId = network.config.chainId
 
           beforeEach(async function () {
-              const { deployer } = await getNamedAccounts()
+              deployer = (await getNamedAccounts()).deployer
               await deployments.fixture("all")
               raffle = await ethers.getContract("Raffle", deployer)
               vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock", deployer)
@@ -57,6 +63,39 @@ const { assert, expect } = require("chai")
           })
 
           describe("enterRaffle", async function () {
-              it("", async function () {})
+              it("Reverts when the player does not pay enough", async function () {
+                  await expect(raffle.enterRaffle()).to.be.revertedWith(
+                      "Raffle__NotEnoughETHEntered"
+                  )
+              })
+
+              it("Record the player when they enter", async function () {
+                  await raffle.enterRaffle({ value: entranceFee })
+                  const contractPlayer = await raffle.getPlayer(0)
+
+                  assert.equal(contractPlayer, deployer)
+              })
+
+              it("Emits the event when a player has enter the raffle", async function () {
+                  await expect(raffle.enterRaffle({ value: entranceFee }))
+                      .to.emit(raffle, "RaffleEnter")
+                      .withArgs(deployer)
+              })
+
+              it("Does not allow to enter the raffle when calculating", async function () {
+                  await raffle.enterRaffle({ value: entranceFee })
+                  // Los siguientes metodos los tomo de https://hardhat.org/hardhat-network/reference
+                  // Primero adelanto el tiempo con "evm_increasetime"
+                  await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
+                  // Luego de adelantar el tiempo mino un bloque con "evm_mine"
+                  // Tambien puede ser await network.provider.request({ method: "evm_mine", params: [] })
+                  await network.provider.send("evm_mine", [])
+                  // Simulo ser un keeper para cambiar el estado de la loteria
+                  // El argumento esta vacio porque no lo necesito: ver el codigo
+                  await raffle.performUpkeep([])
+                  await expect(raffle.enterRaffle({ value: entranceFee })).to.be.revertedWith(
+                      "Raffle__NotOpen"
+                  )
+              })
           })
       })
