@@ -2,9 +2,14 @@ const { getNamedAccounts, deployments, ethers, network } = require("hardhat")
 const { developmentChains, networkConfig } = require("../../helper-hardhat-config")
 const { assert, expect } = require("chai")
 
+/*
+ * Los describe no pueden manejar async asi que no importa si se ponen o no
+ * En este caso se quitaran para que se vea mas estetico
+ * los it y los beforEach si deben tener el async
+ */
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Raffle unit tests", async function () {
+    : describe("Raffle unit tests", function () {
           let raffle,
               vrfCoordinatorV2Mock,
               deployer,
@@ -25,7 +30,7 @@ const { assert, expect } = require("chai")
               interval = await raffle.getInterval()
           })
 
-          describe("Constructor", async function () {
+          describe("Constructor", function () {
               it("Sets the raffle with the correct entranceFee", async function () {
                   const actualEntranceFee = entranceFee.toString()
                   const expectedEntranceFee = networkConfig[chainId]["entranceFee"]
@@ -62,7 +67,7 @@ const { assert, expect } = require("chai")
               })
           })
 
-          describe("enterRaffle", async function () {
+          describe("enterRaffle function", function () {
               it("Reverts when the player does not pay enough", async function () {
                   await expect(raffle.enterRaffle()).to.be.revertedWith(
                       "Raffle__NotEnoughETHEntered"
@@ -92,10 +97,45 @@ const { assert, expect } = require("chai")
                   await network.provider.send("evm_mine", [])
                   // Simulo ser un keeper para cambiar el estado de la loteria
                   // El argumento esta vacio porque no lo necesito: ver el codigo
+                  // La otra forma de dar un argumento vacio es await raffle.performUpkeep("0x")
                   await raffle.performUpkeep([])
                   await expect(raffle.enterRaffle({ value: entranceFee })).to.be.revertedWith(
                       "Raffle__NotOpen"
                   )
+              })
+          })
+
+          describe("checkUpkeep function", async function () {
+              it("Returns false if the raffle is not open", async function () {
+                  await raffle.enterRaffle({ value: entranceFee })
+                  await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
+                  await network.provider.send("evm_mine", [])
+                  await raffle.performUpkeep([])
+                  const { upkeepNeeded } = await raffle.callStatic.checkUpkeep([])
+                  assert.equal(upkeepNeeded, false)
+              })
+
+              it("Returns false if enough time has not passed", async function () {
+                  await raffle.enterRaffle({ value: entranceFee })
+                  const { upkeepNeeded } = await raffle.callStatic.checkUpkeep([])
+                  assert.equal(upkeepNeeded, false)
+              })
+
+              it("Returns false if there is no balance, and no players", async function () {
+                  await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
+                  await network.provider.send("evm_mine", [])
+                  // Con callStatic simulo una transaccion sin enviarla
+                  const { upkeepNeeded } = await raffle.callStatic.checkUpkeep([])
+                  // Tambien puede ser assert.equal(upkeepNeeded, false)
+                  assert(!upkeepNeeded)
+              })
+
+              it("Returns true if the conditions passes", async function () {
+                  await raffle.enterRaffle({ value: entranceFee })
+                  await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
+                  await network.provider.send("evm_mine", [])
+                  const { upkeepNeeded } = await raffle.callStatic.checkUpkeep([])
+                  assert.equal(upkeepNeeded, true)
               })
           })
       })

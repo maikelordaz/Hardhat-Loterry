@@ -20,5 +20,12 @@
     "prettier-plugin-solidity": "^1.0.0-dev.23",
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.7.21"
+  },
+  "scripts": {
+    "compile": "yarn hardhat compile",
+    "test": "yarn hardhat test",
+    "coverage": "yarn hardhat coverage",
+    "test:staging": "yarn hardhat test --network rinkeby",
+    "format": "yarn prettier --write ."
   }
 }
