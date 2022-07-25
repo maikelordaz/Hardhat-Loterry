@@ -236,7 +236,7 @@ const { assert, expect } = require("chai")
                    * la promesa en el hardhat.config debo poner una seccion para un timeout de
                    * mocha, asi si supera el tiempo la prueba falla. Dentro del listener pongo
                    * un try catch por si hay un error me lo muestre. Todo quedaria de esta forma:
-                   * 1. Promesa await ----> new Promise(async (resolve, reject) => {})
+                   * 1. Promesa  ---------> await new Promise(async (resolve, reject) => {})
                    *    2. Listener ------> "mi contrato".once("Evento a escuchar", async () => {})
                    *        3. try
                    *            4. assert, expect
