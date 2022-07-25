@@ -105,7 +105,7 @@ const { assert, expect } = require("chai")
               })
           })
 
-          describe("checkUpkeep function", async function () {
+          describe("checkUpkeep function", function () {
               it("Returns false if the raffle is not open", async function () {
                   await raffle.enterRaffle({ value: entranceFee })
                   await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
@@ -136,6 +136,54 @@ const { assert, expect } = require("chai")
                   await network.provider.send("evm_mine", [])
                   const { upkeepNeeded } = await raffle.callStatic.checkUpkeep([])
                   assert.equal(upkeepNeeded, true)
+              })
+          })
+
+          describe("performUpkeep function", function () {
+              it("Can only run if checkUpkeep is true", async function () {
+                  await raffle.enterRaffle({ value: entranceFee })
+                  await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
+                  await network.provider.send("evm_mine", [])
+                  // Llamo a performUpkeep
+                  const tx = await raffle.performUpkeep([])
+                  // me aseguro de que tx existe
+                  assert(tx)
+              })
+
+              it("Should revert if checkUpkeep is false", async function () {
+                  await expect(raffle.performUpkeep([])).to.be.revertedWith(
+                      "Raffle__UpkeepNoNeeded"
+                  )
+              })
+
+              it("Update the raffle state, emit the event and requestId", async function () {
+                  await raffle.enterRaffle({ value: entranceFee })
+                  await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
+                  await network.provider.send("evm_mine", [])
+                  const txResponse = await raffle.performUpkeep([])
+                  const txReceipt = await txResponse.wait(1)
+                  /*
+                   * En la funcion perforUpkeep al llamar a la funcion requestRandomWords del
+                   * vrfCoordinator, esta funcion emite un evento que al ir primero seria el
+                   * events[0], este evento tiene varios parametros, uno de ellos es requestId,
+                   * por lo que podria verificarlo aqui. Luego de ese emito otro evento, declarado
+                   * en mi contrato, que se llama RequestedRaffleWinner y que tiene como unico
+                   * parametro requestId, puedo dejarlo así para quesea mas facil verificar, o
+                   * puedo eliminar mi evento y verificar el del vrfCoordinator, lo que me podria
+                   * ahorrar algo de gas
+                   */
+                  const requestId = txReceipt.events[1].args.requestId
+                  const raffleState = await raffle.getRaffleState()
+                  assert(requestId.toNumber() > 0)
+                  assert(raffleState == 1)
+              })
+          })
+
+          describe("fulfillRandomWords function", function () {
+              beforeEach(async function () {
+                  await raffle.enterRaffle({ value: entranceFee })
+                  await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
+                  await network.provider.send("evm_mine", [])
               })
           })
       })
