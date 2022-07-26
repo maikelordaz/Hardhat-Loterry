@@ -2,11 +2,6 @@ const { getNamedAccounts, deployments, ethers, network } = require("hardhat")
 const { developmentChains, networkConfig } = require("../../helper-hardhat-config")
 const { assert, expect } = require("chai")
 
-/*
- * Los describe no pueden manejar async asi que no importa si se ponen o no
- * En este caso se quitaran para que se vea mas estetico
- * los it y los beforEach si deben tener el async
- */
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Raffle unit tests", function () {
@@ -99,15 +94,8 @@ const { assert, expect } = require("chai")
 
               it("Does not allow to enter the raffle when calculating", async function () {
                   await raffle.enterRaffle({ value: entranceFee })
-                  // Los siguientes metodos los tomo de https://hardhat.org/hardhat-network/reference
-                  // Primero adelanto el tiempo con "evm_increasetime"
                   await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
-                  // Luego de adelantar el tiempo mino un bloque con "evm_mine"
-                  // Tambien puede ser await network.provider.request({ method: "evm_mine", params: [] })
                   await network.provider.send("evm_mine", [])
-                  // Simulo ser un keeper para cambiar el estado de la loteria
-                  // El argumento esta vacio porque no lo necesito: ver el codigo
-                  // La otra forma de dar un argumento vacio es await raffle.performUpkeep("0x")
                   await raffle.performUpkeep([])
                   await expect(raffle.enterRaffle({ value: entranceFee })).to.be.revertedWith(
                       "Raffle__NotOpen"
@@ -134,9 +122,7 @@ const { assert, expect } = require("chai")
               it("Returns false if there is no balance, and no players", async function () {
                   await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
                   await network.provider.send("evm_mine", [])
-                  // Con callStatic simulo una transaccion sin enviarla
                   const { upkeepNeeded } = await raffle.callStatic.checkUpkeep([])
-                  // Tambien puede ser assert.equal(upkeepNeeded, false)
                   assert(!upkeepNeeded)
               })
 
@@ -154,9 +140,7 @@ const { assert, expect } = require("chai")
                   await raffle.enterRaffle({ value: entranceFee })
                   await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
                   await network.provider.send("evm_mine", [])
-                  // Llamo a performUpkeep
                   const tx = await raffle.performUpkeep([])
-                  // me aseguro de que tx existe
                   assert(tx)
               })
 
@@ -172,16 +156,6 @@ const { assert, expect } = require("chai")
                   await network.provider.send("evm_mine", [])
                   const txResponse = await raffle.performUpkeep([])
                   const txReceipt = await txResponse.wait(1)
-                  /*
-                   * En la funcion perforUpkeep al llamar a la funcion requestRandomWords del
-                   * vrfCoordinator, esta funcion emite un evento que al ir primero seria el
-                   * events[0], este evento tiene varios parametros, uno de ellos es requestId,
-                   * por lo que podria verificarlo aqui. Luego de ese emito otro evento, declarado
-                   * en mi contrato, que se llama RequestedRaffleWinner y que tiene como unico
-                   * parametro requestId, puedo dejarlo así para quesea mas facil verificar, o
-                   * puedo eliminar mi evento y verificar el del vrfCoordinator, lo que me podria
-                   * ahorrar algo de gas
-                   */
                   const requestId = txReceipt.events[1].args.requestId
                   const raffleState = await raffle.getRaffleState()
                   assert(requestId.toNumber() > 0)
@@ -191,21 +165,12 @@ const { assert, expect } = require("chai")
 
           describe("fulfillRandomWords function", function () {
               beforeEach(async function () {
-                  // Para fullfill random words ya tiene que haber gente en la loteria
                   await raffle.enterRaffle({ value: entranceFee })
                   await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
                   await network.provider.send("evm_mine", [])
               })
 
               it("Should only be called after performUpKeep", async function () {
-                  /*
-                   * Llamo a fulfillRandomWords directamente en el mock, ya que en mi contrato es
-                   * una funcion interna y no la puedo ver desde los test, los argumentos son el numero
-                   * al azar y la direccion del contrato que hace la solicitud. El contrato que esta haciendo
-                   * la solicitud es el que cree yo. El numero al azar lo puedo inventar, ya que al no haber
-                   * hecho la solicitud deberia darme el error "nonexistent request". Este error esta en el
-                   * contrato del mock. Hago la prueba con dos numeros distintos para asegurarme
-                   */
                   await expect(
                       vrfCoordinatorV2Mock.fulfillRandomWords(0, raffle.address)
                   ).to.be.revertedWith("nonexistent request")
@@ -218,33 +183,11 @@ const { assert, expect } = require("chai")
                   const accounts = await ethers.getSigners()
                   const startingTimeStamp = await raffle.getLatestTimestamp()
                   const players = 4
-                  const startingAccountIndex = 1 // Empieza en 1 porque deployer es el 0
-                  // i = 1; i < 5; i++
+                  const startingAccountIndex = 1
                   for (let i = startingAccountIndex; i < startingAccountIndex + players; i++) {
                       const rafflePlayer = raffle.connect(accounts[i])
                       await rafflePlayer.enterRaffle({ value: entranceFee })
                   }
-                  /*
-                   * Llamo a performUpkeep (el mock se hace pasar por un Chainlink keeper)
-                   * fulfillRandomWords (mock se hace pasar por el Chainlink VRF)
-                   * Hay que esperar a que fulfillRandomWords sea llamado y emita su evento
-                   * llamado "WinnerPicked". Para esto necesito un listener que escuche el
-                   * evento WinnerPicked, esto lo hago con una promesa. Entonces dentro de la
-                   * promesa y afuera del listener hago el llamado a performUpkeep y a
-                   * fulfillRandomWords, y dentro de la promesa y dentro del listener hago
-                   * mis assert y mis expect segun sea el caso. Como debo esperar un tiempo por
-                   * la promesa en el hardhat.config debo poner una seccion para un timeout de
-                   * mocha, asi si supera el tiempo la prueba falla. Dentro del listener pongo
-                   * un try catch por si hay un error me lo muestre. Todo quedaria de esta forma:
-                   * 1. Promesa  ---------> await new Promise(async (resolve, reject) => {})
-                   *    2. Listener ------> "mi contrato".once("Evento a escuchar", async () => {})
-                   *        3. try
-                   *            4. assert, expect
-                   *            4. resolve() la promesa
-                   *        3. catch
-                   *            4. reject(e) la promesa
-                   *    2. Llamada a lo que genera el evento
-                   */
                   await new Promise(async (resolve, reject) => {
                       raffle.once("WinnerPicked", async () => {
                           console.log("Found the event")
@@ -273,13 +216,10 @@ const { assert, expect } = require("chai")
                               reject(e)
                           }
                       })
-                      // Antes de esto veo todos los console.log que estan arriba para ver
-                      // quien es el ganador
+
                       const winnerStartingBalance = await accounts[1].getBalance()
                       const tx = await raffle.performUpkeep([])
                       const txReceipt = await tx.wait(1)
-                      // Del evento lanzado por performUpkeep tomo el requestId en el contrato
-                      // del mock puedo ver los argumentos que necesita fulfillRamdomWords
                       await vrfCoordinatorV2Mock.fulfillRandomWords(
                           txReceipt.events[1].args.requestId,
                           raffle.address

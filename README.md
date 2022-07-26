@@ -1,7 +1,8 @@
 # Raffle
 
 This is a solidity project to show how to use Chainlink VRF and
-Chainlink Keepers:
+Chainlink Keepers. It consist on a descentralized and auromated
+lottery
 
 ## :rocket: INSTALLATION
 
@@ -9,11 +10,7 @@ Chainlink Keepers:
 2. Install the dependencies with 
     > npm install
     > yarn install
-3. Run test with any of
-    > npx hardhat test
-    > npm run test
-    > yarn hardhat test
-    > yarn test
+
 
 ## :computer: WALKTHROUGH
 
@@ -25,14 +22,26 @@ To fund Chainlink Keeper enter [here](https://keepers.chain.link/)
 + Chainlink
     - Chainlink VRF V2
     - Chainlink Keepers
++ Hardhat
 
 ## :abacus: TEST
 
 The tests are divided to check every contract functionality one by one.
+For the Unit test run any of this:
+
+    > npx hardhat test
+    > npm run test
+    > yarn hardhat test
+    > yarn test
+
 For the staging test remember to deploy first, and fund your VRF and Keepers
-subscription. Just run the comands 
+subscription. For the deploy run any of this comands 
+
+    > yarn hardhat deploy --network rinkeby
     > yarn rinkeby
-Wait for the deploy and verification, and then
+
+Wait for the deploy and verification, and then run either of this ones
+    > yarn hardhat test --network rinkeby
     > yarn staging
 
 ## :bookmark_tabs: CONTRIBUTE

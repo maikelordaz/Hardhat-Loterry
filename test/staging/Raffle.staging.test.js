@@ -1,11 +1,3 @@
-/*
- * Para correr esta prueba debo seguir estos pasos:
- * 1. Obtener unaSubId para el ChainlinkVRF en https://vrf.chain.link
- * 2. Hacer deploy al contrato usando la SubId
- * 3. Registrar el contrato en ChainlinkVRF y su SubId
- * 4. Registrar el contrato en Chainlink Keepers en https://keepers.chain.link/
- * 5. Correr las pruebas
- */
 const { getNamedAccounts, deployments, ethers, network } = require("hardhat")
 const { developmentChains, networkConfig } = require("../../helper-hardhat-config")
 const { assert, expect } = require("chai")
@@ -52,8 +44,6 @@ developmentChains.includes(network.name)
                               reject(e)
                           }
                       })
-                      // Entro a la loteria despues de acomodar el listener por si acaso la
-                      // blockchain se mueve muy rapido
                       console.log("Entering the raffle")
                       const transactionResponse = await raffle.enterRaffle({ value: entranceFee })
                       await transactionResponse.wait(1)
