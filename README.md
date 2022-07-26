@@ -9,6 +9,7 @@ lottery
 1. Clone this repo
 2. Install the dependencies with 
     > npm install
+    
     > yarn install
 
 
