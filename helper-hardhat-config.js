@@ -20,8 +20,12 @@ const networkConfig = {
 }
 
 const developmentChains = ["hardhat", "localhost"]
+const frontEndContractsFile = "../nextjs-smartcontract-lottery/constants/contractAddresses.json"
+const frontEndAbiFile = "../nextjs-smartcontract-lottery/constants/abi.json"
 
 module.exports = {
     networkConfig,
     developmentChains,
+    frontEndContractsFile,
+    frontEndAbiFile,
 }
